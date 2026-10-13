@@ -193,8 +193,8 @@ namespace PrefabSplitterTool.Editor
             }
 
             Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Create Prefab Root");
             int undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName(undoGroup, "Create Prefab Root");
 
             Undo.RegisterFullObjectHierarchyUndo(original, "Create Prefab Root");
 
