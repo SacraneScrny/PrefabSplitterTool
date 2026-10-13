@@ -15,7 +15,7 @@ everything else stays where it was. No manual unparenting.
 Package Manager → `Add package from git URL…`:
 
 ```text
-https://github.com/SacraneScrny/com.sackrany.prefabroot.git
+https://github.com/SacraneScrny/PrefabSplitterTool.git
 ```
 
 Or copy this folder into `Packages/`. Unity 2021.3+, editor only, no dependencies.
