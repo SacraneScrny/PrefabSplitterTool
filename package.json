@@ -1,0 +1,17 @@
+{
+    "name": "com.sackrany.prefabroot",
+    "displayName": "Prefab Root",
+    "version": "1.0.0",
+    "unity": "2021.3",
+    "description": "Right-click any GameObject to save a prefab with exactly the children you check, then replaces the scene object with the prefab instance while keeping the rest in place.",
+    "author": {
+        "name": "Sackrany"
+    },
+    "license": "MIT",
+    "keywords": [
+        "prefab",
+        "editor",
+        "hierarchy",
+        "tool"
+    ]
+}
