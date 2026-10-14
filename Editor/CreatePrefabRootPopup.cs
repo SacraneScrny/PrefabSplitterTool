@@ -113,18 +113,6 @@ namespace PrefabSplitterTool.Editor
             var foldRect = new Rect(x, row.y, FoldoutWidth, lineH);
             var fieldRect = new Rect(x + FoldoutWidth, row.y, Mathf.Max(0f, row.xMax - x - FoldoutWidth), lineH);
 
-            // Subtle descendant count on the right; shrink the field so long names
-            // get clipped under it instead of shifting the row.
-            string countText = null;
-            Rect countRect = default;
-            if (hasKids)
-            {
-                countText = CountDescendants(node).ToString();
-                Vector2 countSize = EditorStyles.miniLabel.CalcSize(new GUIContent(countText));
-                countRect = new Rect(fieldRect.xMax - countSize.x, row.y + (lineH - countSize.y) * 0.5f, countSize.x, countSize.y);
-                fieldRect.width = Mathf.Max(0f, fieldRect.width - countSize.x - 4f);
-            }
-
             if (hasKids && nodeKept)
             {
                 int id = node.gameObject.GetInstanceID();
@@ -133,22 +121,37 @@ namespace PrefabSplitterTool.Editor
                 if (nexp != exp) _expanded[id] = nexp;
             }
 
+            // Name sized to its content; the child count goes right after the text.
+            float textEnd;
             if (isRoot)
             {
-                EditorGUI.LabelField(fieldRect, node.name + "  (root)", EditorStyles.boldLabel);
+                var rootContent = new GUIContent(node.name + "  (root)");
+                float rootW = Mathf.Min(EditorStyles.boldLabel.CalcSize(rootContent).x, fieldRect.width);
+                EditorGUI.LabelField(new Rect(fieldRect.x, row.y, rootW, lineH), rootContent, EditorStyles.boldLabel);
+                textEnd = fieldRect.x + rootW;
             }
             else
             {
-                bool nv = EditorGUI.ToggleLeft(
-                    fieldRect, node.name + (node.gameObject.activeSelf ? "" : "  (inactive)"), nodeKept);
+                var nameContent = new GUIContent(node.name + (node.gameObject.activeSelf ? "" : "  (inactive)"));
+                float toggleW = Mathf.Min(EditorStyles.toggle.CalcSize(nameContent).x, fieldRect.width);
+                bool nv = EditorGUI.ToggleLeft(new Rect(fieldRect.x, row.y, toggleW, lineH), nameContent, nodeKept);
                 if (nv && !nodeKept)
                     job.Keep.Add(node.gameObject);
                 else if (!nv && nodeKept)
                     RemoveSubtree(job, node);
+                textEnd = fieldRect.x + toggleW;
             }
 
-            if (countText != null)
-                EditorGUI.LabelField(countRect, countText, EditorStyles.miniLabel);
+            if (hasKids)
+            {
+                string countText = node.childCount.ToString();
+                Vector2 countSize = EditorStyles.miniLabel.CalcSize(new GUIContent(countText));
+                float cx = textEnd + 4f;
+                if (cx + countSize.x <= row.xMax + 1f)
+                    EditorGUI.LabelField(
+                        new Rect(cx, row.y + (lineH - countSize.y) * 0.5f, countSize.x, countSize.y),
+                        countText, EditorStyles.miniLabel);
+            }
 
             if (nodeKept && hasKids && GetExpanded(node.gameObject.GetInstanceID()))
                 foreach (Transform c in node)
@@ -197,14 +200,6 @@ namespace PrefabSplitterTool.Editor
                 n++;
                 CountWalk(c, keep, ref n);
             }
-        }
-
-        static int CountDescendants(Transform node)
-        {
-            int n = 0;
-            foreach (Transform c in node)
-                n += 1 + CountDescendants(c);
-            return n;
         }
 
         List<(GameObject parent, HashSet<GameObject> keep)> ToCoreJobs()
