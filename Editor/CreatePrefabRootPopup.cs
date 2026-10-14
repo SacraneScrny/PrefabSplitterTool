@@ -113,6 +113,18 @@ namespace PrefabSplitterTool.Editor
             var foldRect = new Rect(x, row.y, FoldoutWidth, lineH);
             var fieldRect = new Rect(x + FoldoutWidth, row.y, Mathf.Max(0f, row.xMax - x - FoldoutWidth), lineH);
 
+            // Subtle descendant count on the right; shrink the field so long names
+            // get clipped under it instead of shifting the row.
+            string countText = null;
+            Rect countRect = default;
+            if (hasKids)
+            {
+                countText = CountDescendants(node).ToString();
+                Vector2 countSize = EditorStyles.miniLabel.CalcSize(new GUIContent(countText));
+                countRect = new Rect(fieldRect.xMax - countSize.x, row.y + (lineH - countSize.y) * 0.5f, countSize.x, countSize.y);
+                fieldRect.width = Mathf.Max(0f, fieldRect.width - countSize.x - 4f);
+            }
+
             if (hasKids && nodeKept)
             {
                 int id = node.gameObject.GetInstanceID();
@@ -134,6 +146,9 @@ namespace PrefabSplitterTool.Editor
                 else if (!nv && nodeKept)
                     RemoveSubtree(job, node);
             }
+
+            if (countText != null)
+                EditorGUI.LabelField(countRect, countText, EditorStyles.miniLabel);
 
             if (nodeKept && hasKids && GetExpanded(node.gameObject.GetInstanceID()))
                 foreach (Transform c in node)
@@ -182,6 +197,14 @@ namespace PrefabSplitterTool.Editor
                 n++;
                 CountWalk(c, keep, ref n);
             }
+        }
+
+        static int CountDescendants(Transform node)
+        {
+            int n = 0;
+            foreach (Transform c in node)
+                n += 1 + CountDescendants(c);
+            return n;
         }
 
         List<(GameObject parent, HashSet<GameObject> keep)> ToCoreJobs()
