@@ -21,6 +21,11 @@ namespace PrefabSplitterTool.Editor
         readonly Dictionary<int, bool> _expanded = new();
         Vector2 _scroll;
 
+        // Tree layout: keep the foldout arrow column a fixed width so labels
+        // on the same level always line up (a stretched foldout shifts text left).
+        const float IndentPerLevel = 10f;
+        const float FoldoutWidth = 12f;
+
         public static void Open(List<GameObject> parents)
         {
             if (parents == null || parents.Count == 0) return;
@@ -102,17 +107,17 @@ namespace PrefabSplitterTool.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Space(depth * 14f);
+                GUILayout.Space(depth * IndentPerLevel);
                 if (hasKids && nodeKept)
                 {
                     int id = node.gameObject.GetInstanceID();
                     bool exp = GetExpanded(id);
-                    bool nexp = EditorGUILayout.Foldout(exp, "", false);
+                    bool nexp = EditorGUILayout.Foldout(exp, GUIContent.none, false, GUILayout.Width(FoldoutWidth));
                     if (nexp != exp) _expanded[id] = nexp;
                 }
                 else
                 {
-                    GUILayout.Space(14);
+                    GUILayout.Space(FoldoutWidth);
                 }
 
                 if (isRoot)
