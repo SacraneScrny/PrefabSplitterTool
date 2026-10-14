@@ -22,9 +22,10 @@ namespace PrefabSplitterTool.Editor
         Vector2 _scroll;
 
         // Tree layout: keep the foldout arrow column a fixed width so labels
-        // on the same level always line up (a stretched foldout shifts text left).
+        // on the same level always line up (an unconstrained foldout shifts text left).
+        // NB: Foldout takes no layout options, so the arrow lives in a fixed-width group.
         const float IndentPerLevel = 10f;
-        const float FoldoutWidth = 12f;
+        const float FoldoutWidth = 14f;
 
         public static void Open(List<GameObject> parents)
         {
@@ -112,8 +113,11 @@ namespace PrefabSplitterTool.Editor
                 {
                     int id = node.gameObject.GetInstanceID();
                     bool exp = GetExpanded(id);
-                    bool nexp = EditorGUILayout.Foldout(exp, "", false, EditorStyles.foldout, GUILayout.Width(FoldoutWidth));
-                    if (nexp != exp) _expanded[id] = nexp;
+                    using (new EditorGUILayout.HorizontalScope(GUILayout.Width(FoldoutWidth)))
+                    {
+                        bool nexp = EditorGUILayout.Foldout(exp, "", false);
+                        if (nexp != exp) _expanded[id] = nexp;
+                    }
                 }
                 else
                 {
