@@ -112,7 +112,7 @@ namespace PrefabSplitterTool.Editor
                 {
                     int id = node.gameObject.GetInstanceID();
                     bool exp = GetExpanded(id);
-                    bool nexp = EditorGUILayout.Foldout(exp, "", false, GUILayout.Width(FoldoutWidth));
+                    bool nexp = EditorGUILayout.Foldout(exp, "", false, EditorStyles.foldout, GUILayout.Width(FoldoutWidth));
                     if (nexp != exp) _expanded[id] = nexp;
                 }
                 else
