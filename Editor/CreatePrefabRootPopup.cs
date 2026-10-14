@@ -21,9 +21,8 @@ namespace PrefabSplitterTool.Editor
         readonly Dictionary<int, bool> _expanded = new();
         Vector2 _scroll;
 
-        // Tree layout: keep the foldout arrow column a fixed width so labels
-        // on the same level always line up (an unconstrained foldout shifts text left).
-        // NB: Foldout takes no layout options, so the arrow lives in a fixed-width group.
+        // Tree layout: fixed arrow column + per-level indent, drawn with explicit
+        // rects (see DrawNode) so row geometry never depends on node state.
         const float IndentPerLevel = 10f;
         const float FoldoutWidth = 14f;
 
@@ -106,37 +105,34 @@ namespace PrefabSplitterTool.Editor
             bool nodeKept = isRoot || job.Keep.Contains(node.gameObject);
             bool hasKids = node.childCount > 0;
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Space(depth * IndentPerLevel);
-                if (hasKids && nodeKept)
-                {
-                    int id = node.gameObject.GetInstanceID();
-                    bool exp = GetExpanded(id);
-                    using (new EditorGUILayout.HorizontalScope(GUILayout.Width(FoldoutWidth)))
-                    {
-                        bool nexp = EditorGUILayout.Foldout(exp, "", false);
-                        if (nexp != exp) _expanded[id] = nexp;
-                    }
-                }
-                else
-                {
-                    GUILayout.Space(FoldoutWidth);
-                }
+            // Explicit rects: every row gets identical geometry whatever the node state
+            // (checked/unchecked, expanded, leaf/parent), so toggling never shifts siblings.
+            float lineH = EditorGUIUtility.singleLineHeight;
+            Rect row = EditorGUILayout.GetControlRect(false, lineH);
+            float x = row.x + depth * IndentPerLevel;
+            var foldRect = new Rect(x, row.y, FoldoutWidth, lineH);
+            var fieldRect = new Rect(x + FoldoutWidth, row.y, Mathf.Max(0f, row.xMax - x - FoldoutWidth), lineH);
 
-                if (isRoot)
-                {
-                    EditorGUILayout.LabelField(node.name + "  (root)", EditorStyles.boldLabel);
-                }
-                else
-                {
-                    bool nv = EditorGUILayout.ToggleLeft(
-                        node.name + (node.gameObject.activeSelf ? "" : "  (inactive)"), nodeKept);
-                    if (nv && !nodeKept)
-                        job.Keep.Add(node.gameObject);
-                    else if (!nv && nodeKept)
-                        RemoveSubtree(job, node);
-                }
+            if (hasKids && nodeKept)
+            {
+                int id = node.gameObject.GetInstanceID();
+                bool exp = GetExpanded(id);
+                bool nexp = GUI.Toggle(foldRect, exp, GUIContent.none, EditorStyles.foldout);
+                if (nexp != exp) _expanded[id] = nexp;
+            }
+
+            if (isRoot)
+            {
+                EditorGUI.LabelField(fieldRect, node.name + "  (root)", EditorStyles.boldLabel);
+            }
+            else
+            {
+                bool nv = EditorGUI.ToggleLeft(
+                    fieldRect, node.name + (node.gameObject.activeSelf ? "" : "  (inactive)"), nodeKept);
+                if (nv && !nodeKept)
+                    job.Keep.Add(node.gameObject);
+                else if (!nv && nodeKept)
+                    RemoveSubtree(job, node);
             }
 
             if (nodeKept && hasKids && GetExpanded(node.gameObject.GetInstanceID()))
